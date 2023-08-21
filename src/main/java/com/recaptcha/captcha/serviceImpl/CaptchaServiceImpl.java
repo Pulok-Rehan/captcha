@@ -1,17 +1,18 @@
 package com.recaptcha.captcha.serviceImpl;
 
-import ch.qos.logback.core.util.StringCollectionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.recaptcha.captcha.dto.CaptchaDto;
 import com.recaptcha.captcha.dto.CharacterInfo;
 import com.recaptcha.captcha.model.CaptchaImage;
 import com.recaptcha.captcha.repository.CaptchaImageRepository;
+import com.recaptcha.captcha.response.CommonResponse;
 import com.recaptcha.captcha.service.CaptchaService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.codec.binary.StringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.lang.Object.* ;
 
 @Service
 @Slf4j
@@ -36,10 +38,10 @@ public class CaptchaServiceImpl implements CaptchaService {
     }
 
     @Override
-    public EkycServiceResponse createCaptcha() throws IOException {
+    public CommonResponse createCaptcha() throws IOException {
         String imagePath = "./src/main/resources/images/captchaBackground.png";
-        EkycServiceResponse ekycServiceResponse =
-                new EkycServiceResponse();
+        CommonResponse commonResponse =
+                new CommonResponse();
         CaptchaDto captchaDto =
                 new CaptchaDto();
         ObjectMapper objectMapper =
@@ -55,7 +57,7 @@ public class CaptchaServiceImpl implements CaptchaService {
             g2d.setColor(Color.WHITE);
             g2d.fillRect(0, 0, width, height);
             g2d.drawImage(sourceImage, 0, 0, null);
-            String text = randomAlphanumeric(5);
+            String text = RandomStringUtils.randomAlphanumeric(3);
             characterInfoList.add(new CharacterInfo(text.charAt(0), new Font("Arial", Font.ITALIC, 30), Color.ORANGE, 30, 35));
             characterInfoList.add(new CharacterInfo(text.charAt(1), new Font("Arial", Font.ITALIC, 35), Color.BLUE, 50, 40));
             characterInfoList.add(new CharacterInfo(text.charAt(2), new Font("Arial", Font.ITALIC, 35), Color.PINK, 65, 45));
@@ -88,39 +90,39 @@ public class CaptchaServiceImpl implements CaptchaService {
             //log.info("Captcha saved for id:"+ captchaImage.getId());
             captchaDto.setId(captchaImage.getId());
             captchaDto.setImageByte(Base64.getEncoder().encodeToString(captchaImage.getImageByte()));
-            ekycServiceResponse.setHasError(false);
-            ekycServiceResponse.setDecentMessage("Captcha generated successfully!");
-            ekycServiceResponse.setContent(objectMapper.writeValueAsString(captchaDto));
+            commonResponse.setHasError(false);
+            commonResponse.setMessage("Captcha generated successfully!");
+            commonResponse.setContent(objectMapper.writeValueAsString(captchaDto));
         }
         catch (IOException exception){
-            ekycServiceResponse.setHasError(true);
-            ekycServiceResponse.setDecentMessage(exception.getMessage());
+            commonResponse.setHasError(true);
+            commonResponse.setMessage(exception.getMessage());
         }
-        return ekycServiceResponse;
+        return commonResponse;
 
     }
 
     @Override
-    public EkycServiceResponse validateCaptcha(Long id, String text) {
-        EkycServiceResponse ekycServiceResponse =
-                new EkycServiceResponse();
+    public CommonResponse validateCaptcha(Long id, String text) {
+        CommonResponse ekycServiceResponse =
+                new CommonResponse();
         try {
             if (captchaImageRepository.findById(id).get()
                     .getText().equals(text)) {
                 ekycServiceResponse.setHasError(false);
-                ekycServiceResponse.setDecentMessage("Captcha Matched");
+                ekycServiceResponse.setMessage("Captcha Matched");
                 ekycServiceResponse.setContent("true");
                 //log.info("Captcha matched for id: "+ captchaImageRepository.findById(id).get().getId());
             } else {
                 ekycServiceResponse.setHasError(true);
                 ekycServiceResponse.setContent("false");
-                ekycServiceResponse.setDecentMessage("Captcha did not match");
+                ekycServiceResponse.setMessage("Captcha did not match");
                 //log.info("Captcha did not match for id: "+ captchaImageRepository.findById(id).get().getId());
             }
         }
         catch (IllegalArgumentException e){
             ekycServiceResponse.setHasError(true);
-            ekycServiceResponse.setDecentMessage(e.getMessage());
+            ekycServiceResponse.setMessage(e.getMessage());
         }
         return ekycServiceResponse;
     }
